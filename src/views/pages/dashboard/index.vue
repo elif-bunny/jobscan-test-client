@@ -3,18 +3,25 @@
     <v-container>
       <v-form>
         <v-row>
-          <v-select attach chips multiple :items="skills" :label="$t('skills')">
-            <template slot="selection" slot-scope="data">
-              <!-- HTML that describe how select should render selected items -->
-              {{ data.item.id }} - {{ data.item.name }} - selection
-            </template>
-            <template slot="item" slot-scope="data">
-              <!-- HTML that describe how select should render items when the select is open -->
-              <div>{{ data.item.id }} - {{ data.item.name }}</div>
-              <v-text-field></v-text-field>
-            </template>
+          <v-select
+            :label="$t('skills')"
+            :items="skills"
+            v-model="selected"
+            v-on:input="selectable"
+            multiple
+            chips
+          >
           </v-select>
-          <div>From</div>
+        </v-row>
+        <v-row>
+          <v-col v-for="skill in selected_skills" :key="skill.value" cols="12" md="2" class="d-flex align-baseline">
+            <v-subheader>{{skill.text}}</v-subheader>
+            <v-text-field
+              v-model="skill.score"
+              label="Score"
+              type="number"
+            ></v-text-field>
+          </v-col>
         </v-row>
         <v-row>
           <v-col cols="12" md="5"> </v-col>
@@ -58,20 +65,22 @@ export default {
   computed: {
     ...mapState({
       loading: (state) => state.jobscan.isLoading,
-      skills: (state) => state.jobscan.skills,
+      skills_origin: (state) => state.jobscan.skills,
       jobs: (state) => state.jobscan.jobs,
     }),
-
-    selectable() {
-      return this.selected.length < 10
-    },
   },
 
   data() {
     return {
-      selected: [], // { skill: skill_id, score: 1 ~ 5 }
-      items: [],
-      names: [],
+      skills: [],
+      selected: [],
+      selected_skills: []
+    }
+  },
+
+  watch: {
+    selected(val) {
+      this.selected_skills = this.skills.filter(skill => val.includes(skill.value))
     }
   },
 
@@ -81,12 +90,17 @@ export default {
     async loadSkills() {
       try {
         this.setLoading(true)
+
         await this.getSkills()
-        this.items = []
-        this.names = []
-        this.skills.forEach((skill) => {
-          this.items.push(skill.id)
-          this.names.push(skill.name)
+
+        this.skills = []
+
+        this.skills_origin.forEach((skill) => {
+          this.skills.push({
+            score: 1,
+            text: skill.name,
+            value: skill.id,
+          })
         })
       } catch (error) {
         console.log(error)
@@ -98,7 +112,18 @@ export default {
     async loadJobs() {
       try {
         this.setLoading(true)
-        const data = {}
+
+        // prepare data
+        let scores = []
+        let skills = []
+        this.selected_skills.forEach(skill => {
+          scores.push(skill.score)
+          skills.push(skill.value)
+        })
+        const data = {
+          scores: scores.join(','),
+          skills: skills.join(','),
+        }
 
         await this.getJobs(data)
       } catch (error) {
@@ -106,6 +131,16 @@ export default {
       } finally {
         this.setLoading(false)
       }
+    },
+
+    selectable(e) {
+      if (e.length > 10) {
+        e.pop()
+      }
+    },
+
+    removeItem(id) {
+      this.selected = this.selected.filter(value => value !== id)
     },
   },
 
