@@ -3,7 +3,7 @@ import { Message } from 'element-ui'
 
 // create an axios instance
 const service = axios.create({
-  baseURL: 'http://localhost:8000/api'
+  baseURL: 'https://jobscan-test-server.herokuapp.com/api'
 })
 
 // request interceptor
