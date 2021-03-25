@@ -14,29 +14,29 @@ const jobscan = {
   },
 
   actions: {
-    setLoading ({ commit }, data = true) {
+    setLoading({ commit }, data = true) {
       // Commit loading state in mutation
       return (async () => {
         // Commit orders state in mutation
         commit('SET_LOADING', data)
-      })();
+      })()
     },
 
-    getJobs ({ commit }, data) {
+    getJobs({ commit }, data) {
       return (async () => {
         const res = await getJobs(data)
 
         // Commit orders state in mutation
         commit('SET_JOBS', res.data)
-      })();
+      })()
     },
 
-    getSkills ({ commit }) {
+    getSkills({ commit }) {
       return (async () => {
         const res = await getSkills()
 
         commit('SET_SKILLS', res.data)
-      })();
+      })()
     },
   },
 
@@ -50,7 +50,7 @@ const jobscan = {
     },
 
     SET_SKILLS: (state, data) => {
-      state.skills = data
+      state.skills = data.skills
     },
   },
 }

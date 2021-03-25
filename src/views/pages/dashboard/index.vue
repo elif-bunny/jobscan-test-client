@@ -1,13 +1,18 @@
 <template>
   <div>
     <v-container>
-      <v-form v-model="valid">
+      <v-form>
         <v-row>
-          <v-select
-            :items="skills"
-            label="Standard"
-          >
-
+          <v-select attach chips multiple :items="skills" :label="$t('skills')">
+            <template slot="selection" slot-scope="data">
+              <!-- HTML that describe how select should render selected items -->
+              {{ data.item.id }} - {{ data.item.name }} - selection
+            </template>
+            <template slot="item" slot-scope="data">
+              <!-- HTML that describe how select should render items when the select is open -->
+              <div>{{ data.item.id }} - {{ data.item.name }}</div>
+              <v-text-field></v-text-field>
+            </template>
           </v-select>
           <div>From</div>
         </v-row>
@@ -27,14 +32,7 @@
               :rules="[rules.required, rules.counter]"
             >
             </v-text-field> -->
-            <v-btn
-              cols="12"
-              sm="1"
-              md="1"
-              class="ml-2"
-              @click="getJobs()"
-              :disabled="!valid"
-            >
+            <v-btn cols="12" sm="1" md="1" class="ml-2" @click="loadJobs()">
               {{ $t("search") }}
             </v-btn>
           </v-col>
@@ -52,7 +50,7 @@
   </div>
 </template>
 <script>
-import { mapActions, mapState } from "vuex";
+import { mapActions, mapState } from "vuex"
 
 export default {
   name: "dashboard",
@@ -65,45 +63,54 @@ export default {
     }),
 
     selectable() {
-      return this.selected.length < 10;
+      return this.selected.length < 10
     },
   },
 
   data() {
     return {
       selected: [], // { skill: skill_id, score: 1 ~ 5 }
-    };
+      items: [],
+      names: [],
+    }
   },
 
   methods: {
     ...mapActions("jobscan", ["getJobs", "getSkills", "setLoading"]),
 
-    async getSkills() {
+    async loadSkills() {
       try {
-        this.setLoading(true);
+        this.setLoading(true)
+        await this.getSkills()
+        this.items = []
+        this.names = []
+        this.skills.forEach((skill) => {
+          this.items.push(skill.id)
+          this.names.push(skill.name)
+        })
       } catch (error) {
-        await this.getSkills();
+        console.log(error)
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
 
-    async getJobs() {
+    async loadJobs() {
       try {
-        this.setLoading(true);
-        const data = {};
+        this.setLoading(true)
+        const data = {}
 
-        await this.getJobs(data);
+        await this.getJobs(data)
       } catch (error) {
-        console.log(error);
+        console.log(error)
       } finally {
-        this.setLoading(false);
+        this.setLoading(false)
       }
     },
   },
 
   mounted() {
-    this.getSkills();
+    this.loadSkills()
   },
-};
+}
 </script>

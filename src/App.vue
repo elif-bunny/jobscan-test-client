@@ -14,5 +14,5 @@ export default {
       title: 'Jobscan test',
     }
   },
-};
+}
 </script>
