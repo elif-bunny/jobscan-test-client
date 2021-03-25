@@ -6,7 +6,7 @@
           <v-select
             :label="$t('skills')"
             :items="skills"
-            v-model="selected"
+            v-model="selected_ids"
             v-on:input="selectable"
             multiple
             chips
@@ -48,9 +48,16 @@
         <v-row v-if="jobs.length > 0">
           <v-col>
             <div justify="center" align="center">
-              {{ filter.total_count }} results
+              {{ jobs.length }} results
             </div>
           </v-col>
+        </v-row>
+        <v-row v-for="job in jobs" :key="job.id">
+          <v-col cols="12" md="1">{{job.id}}</v-col>
+          <v-col cols="12" md="3">{{job.title}}</v-col>
+          <v-col cols="12" md="1">{{job.company}}</v-col>
+          <v-col cols="12" md="6">{{job.skills}}</v-col>
+          <v-col cols="12" md="1">({{job.score}})</v-col>
         </v-row>
       </v-form>
     </v-container>
@@ -66,20 +73,21 @@ export default {
     ...mapState({
       loading: (state) => state.jobscan.isLoading,
       skills_origin: (state) => state.jobscan.skills,
-      jobs: (state) => state.jobscan.jobs,
+      jobs_origin: (state) => state.jobscan.jobs,
     }),
   },
 
   data() {
     return {
       skills: [],
-      selected: [],
+      jobs: [],
+      selected_ids: [],
       selected_skills: []
     }
   },
 
   watch: {
-    selected(val) {
+    selected_ids(val) {
       this.selected_skills = this.skills.filter(skill => val.includes(skill.value))
     }
   },
@@ -126,6 +134,21 @@ export default {
         }
 
         await this.getJobs(data)
+
+        this.jobs = this.jobs_origin.map(job => {
+          const skill_ids = job.skills.split(',').map(id => parseInt(id))
+          const skill_org = this.skills_origin
+          const skill_names = skill_org.filter(skill => skill_ids.includes(skill.id)).map(skill => skill.name)
+          return {
+            id: job.id,
+            title: job.title,
+            company: job.company,
+            score: job.score | 0,
+            skills: skill_names.join(', ')
+          }
+        })
+
+        console.log(this.jobs)
       } catch (error) {
         console.log(error)
       } finally {
@@ -140,7 +163,7 @@ export default {
     },
 
     removeItem(id) {
-      this.selected = this.selected.filter(value => value !== id)
+      this.selected_ids = this.selected_ids.filter(value => value !== id)
     },
   },
 

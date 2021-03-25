@@ -46,7 +46,7 @@ const jobscan = {
     },
 
     SET_JOBS: (state, data) => {
-      state.jobs = data
+      state.jobs = data.jobs
     },
 
     SET_SKILLS: (state, data) => {
