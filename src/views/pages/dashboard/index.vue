@@ -3,9 +3,20 @@
     <v-container>
       <v-form v-model="valid">
         <v-row>
-          <v-col cols="12" md="3"> </v-col>
-          <v-col cols="12" md="6" class="d-flex align-baseline">
-            <v-text-field
+          <v-select
+            :items="skills"
+            label="Standard"
+          >
+
+          </v-select>
+          <div>From</div>
+        </v-row>
+        <v-row>
+          <v-col cols="12" md="5"> </v-col>
+          <v-col cols="12" md="2" class="d-flex align-baseline">
+            <!-- TODO: skill picker goes here -->
+            <!-- https://vuetifyjs.com/en/components/combobox/#advanced-custom-options -->
+            <!-- <v-text-field
               cols="12"
               sm="5"
               md="5"
@@ -15,66 +26,28 @@
               v-model="filter.q"
               :rules="[rules.required, rules.counter]"
             >
-            </v-text-field>
+            </v-text-field> -->
             <v-btn
               cols="12"
               sm="1"
               md="1"
               class="ml-2"
-              @click="search()"
+              @click="getJobs()"
               :disabled="!valid"
             >
               {{ $t("search") }}
             </v-btn>
           </v-col>
-          <v-col cols="12" md="3"> </v-col>
+          <v-col cols="12" md="5"> </v-col>
         </v-row>
-        <v-row v-if="filter.total_count>0">
+        <v-row v-if="jobs.length > 0">
           <v-col>
-            <div justify="center" align="center">{{filter.total_count}} results (display first 1000 results only)
-              <a :href="apiURL" target="_blank" v-if="apiURL !== undefined"> Github API Link (current page)</a>
+            <div justify="center" align="center">
+              {{ filter.total_count }} results
             </div>
           </v-col>
         </v-row>
       </v-form>
-      <v-card style="background-color: transparent" v-if="users.length>0">
-        <v-container>
-          <v-item-group>
-            <v-row>
-              <v-col v-for="(user, idx) in users" :key="idx">
-                <v-card
-                  color="secondary"
-                  @click="openUser(user)"
-                  height="auto"
-                  width="140"
-                  class=""
-                  tile
-                >
-                  <v-col
-                    class="d-flex flex-column"
-                    align="center"
-                    justify="center"
-                  >
-                    <v-avatar class="profile" size="auto">
-                      <v-img :src="user.avatar_url"></v-img>
-                    </v-avatar>
-                    <div class="mt-3">
-                      {{ user.login }}
-                    </div>
-                  </v-col>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-item-group>
-        </v-container>
-        <v-pagination
-          circle
-          v-model="filter.page"
-          :length="pages"
-          total-visible="7"
-          @input="changePage"
-        ></v-pagination>
-      </v-card>
     </v-container>
   </div>
 </template>
@@ -86,85 +59,51 @@ export default {
 
   computed: {
     ...mapState({
-      loading: (state) => state.github.isLoading,
-      filter: (state) => state.github.filter,
-      users: (state) => state.github.users,
-      apiURL: (state) => state.github.lastUsersURL,
-      pages: (state) => {
-        return Math.ceil(
-          Math.min(state.github.filter.total_count, 1000) /
-            state.github.filter.per_page
-        );
-      },
+      loading: (state) => state.jobscan.isLoading,
+      skills: (state) => state.jobscan.skills,
+      jobs: (state) => state.jobscan.jobs,
     }),
+
+    selectable() {
+      return this.selected.length < 10;
+    },
   },
 
-  data()  {
+  data() {
     return {
-      rules: {
-        required: (value) => !!value || "Required.",
-        counter: (value) => value.length <= 50 || "Max 50 characters",
-      },
-      valid: false,
-      page: 1,
+      selected: [], // { skill: skill_id, score: 1 ~ 5 }
     };
   },
 
   methods: {
-    ...mapActions("github", [
-      "resetFilter",
-      "getUsers",
-      "setLoading",
-      "setFilterOption",
-    ]),
+    ...mapActions("jobscan", ["getJobs", "getSkills", "setLoading"]),
 
-    async onSearch() {
+    async getSkills() {
       try {
-        // reset page, total_count
-        await this.resetFilter();
-
-        // start fetching from github api
-        await this.search();
+        this.setLoading(true);
       } catch (error) {
-        console.log(error);
+        await this.getSkills();
+      } finally {
+        this.setLoading(false);
       }
     },
 
-    async search() {
+    async getJobs() {
       try {
-        // maybe progress bar
         this.setLoading(true);
+        const data = {};
 
-        // start fetching from github api
-        await this.getUsers();
+        await this.getJobs(data);
       } catch (error) {
         console.log(error);
       } finally {
         this.setLoading(false);
       }
     },
-
-    async changePage(page) {
-      try {
-        // just update page
-        await this.setFilterOption({
-          option: "page",
-          value: page,
-        });
-
-        // start fetching from github api
-        await this.search();
-      } catch (error) {
-        console.log(error);
-      }
-    },
-
-    openUser(user) {
-      const login = user.login;
-      this.$router.push({ name: "profile", params: { login } });
-    },
   },
 
-  mounted() {},
+  mounted() {
+    this.getSkills();
+  },
 };
 </script>
